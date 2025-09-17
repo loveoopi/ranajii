@@ -1,6 +1,6 @@
 import os
 import asyncio
-from pyrogram import Client, filters
+from pyrogram import Client, filters, idle
 from pyrogram.types import Message
 from pyrogram.errors import PeerIdInvalid
 from pytgcalls import PyTgCalls
@@ -9,18 +9,28 @@ from pytgcalls.types.input_stream import InputAudioStream, InputVideoStream, Inp
 from pytgcalls.types.input_stream.quality import HighQualityVideo, HighQualityAudio
 from pymongo import MongoClient
 
-# Bot configuration with your provided credentials
-API_ID = 22532815
-API_HASH = "cdc905788c22458df1276e488c6d19b2"
-BOT_TOKEN = "8497303111:AAGKfmzGQH1v6DQHeBOecLqRL9mtq0dPtpg"
-SESSION_STRING = "BQCOaU4AmT6YuACJAbzEOiO6wFhCLYkIFe4ULqDfvKY_YOBouB1n5CQm6OG6-yYu0QkSv1X2QTt39hzsJSZIgGPTl2vJVYuojvTNeByxFII5VvG0XHBkyHbVMSZLuHf2-IdUwl6pNE9EKFzra5tLJ86a2MJbLYeBdlpU1Ij-GIRFuN7f1COyfaTywncylNnvtHFonDbM7SaVwPpkZeAt6v451u_4l03ozM9M4vTM2aTNFFsNqJfnNUXLVmAE2Ad7K3vy9vwhGqe_o8DCxSG0pRJpZEUIFcksD9-BP1SmlUwdZFlwwjr6NNtuLVMbb8-QfC_g0kCeyjebbYVFD2RYJxH1wnf16wAAAAHrrzhRAA"
-OWNER_ID = 7406389785
-MONGODB_URI = "mongodb+srv://yacan69355:Cw92BrnfAfWQcLvU@cluster0.jh6h6wg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+# Get configuration from environment variables (Heroku)
+API_ID = int(os.environ.get("API_ID", 22532815))
+API_HASH = os.environ.get("API_HASH", "cdc905788c22458df1276e488c6d19b2")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8497303111:AAGKfmzGQH1v6DQHeBOecLqRL9mtq0dPtpg")
+SESSION_STRING = os.environ.get("SESSION_STRING", "BQCOaU4AmT6YuACJAbzEOiO6wFhCLYkIFe4ULqDfvKY_YOBouB1n5CQm6OG6-yYu0QkSv1X2QTt39hzsJSZIgGPTl2vJVYuojvTNeByxFII5VvG0XHBkyHbVMSZLuHf2-IdUwl6pNE9EKFzra5tLJ86a2MJbLYeBdlpU1Ij-GIRFuN7f1COyfaTywncylNnvtHFonDbM7SaVwPpkZeAt6v451u_4l03ozM9M4vTM2aTNFFsNqJfnNUXLVmAE2Ad7K3vy9vwhGqe_o8DCxSG0pRJpZEUIFcksD9-BP1SmlUwdZFlwwjr6NNtuLVMbb8-QfC_g0kCeyjebbYVFD2RYJxH1wnf16wAAAAHrrzhRAA")
+OWNER_ID = int(os.environ.get("OWNER_ID", 7406389785))
+MONGODB_URI = os.environ.get("MONGODB_URI", "mongodb+srv://yacan69355:Cw92BrnfAfWQcLvU@cluster0.jh6h6wg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 
 # Initialize MongoDB client
-mongo_client = MongoClient(MONGODB_URI)
-db = mongo_client.telegram_vc_bot
-playlists = db.playlists
+try:
+    mongo_client = MongoClient(MONGODB_URI)
+    db = mongo_client.telegram_vc_bot
+    playlists = db.playlists
+    print("Connected to MongoDB successfully!")
+except Exception as e:
+    print(f"Error connecting to MongoDB: {e}")
+    # Create a dummy collection to prevent errors
+    class DummyCollection:
+        def find_one(self, *args, **kwargs): return None
+        def update_one(self, *args, **kwargs): pass
+        def find(self, *args, **kwargs): return []
+    playlists = DummyCollection()
 
 # Initialize clients
 app = Client(
@@ -270,12 +280,32 @@ async def list_playlists_command(client: Client, message: Message):
     
     await message.reply_text(playlist_list)
 
+@app.on_message(filters.command("start"))
+async def start_command(client: Client, message: Message):
+    await message.reply_text(
+        "🤖 **Telegram VC Video Bot**\n\n"
+        "I can play videos in Telegram group voice chats!\n\n"
+        "**Commands:**\n"
+        "/vplay (reply to a video) - Add video to queue\n"
+        "/skip - Skip current video\n"
+        "/stop - Stop playback\n"
+        "/pause - Pause playback\n"
+        "/resume - Resume playback\n"
+        "/queue - Show current queue\n"
+        "/save <name> - Save queue as playlist\n"
+        "/load <name> - Load a playlist\n"
+        "/list - List your playlists\n\n"
+        "Add me to a group and make me admin to get started!"
+    )
+
+# Start the bot
 async def main():
     await app.start()
     print("Bot started!")
     await user_client.start()
     print("User client started!")
     await call_py.start()
+    print("PyTgCalls started!")
     await idle()
 
 if __name__ == "__main__":
