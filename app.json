@@ -1,0 +1,47 @@
+{
+  "name": "Telegram VC Bot",
+  "description": "A Telegram bot for playing videos in group voice chats",
+  "repository": "https://github.com/your-username/your-repo-name",
+  "logo": "https://telegra.ph/file/3c00a6cbfb17b68399e1f.png",
+  "keywords": ["telegram", "bot", "voice-chat", "video-player", "python"],
+  "env": {
+    "API_ID": {
+      "description": "Your Telegram API ID",
+      "value": "22532815"
+    },
+    "API_HASH": {
+      "description": "Your Telegram API Hash",
+      "value": "cdc905788c22458df1276e488c6d19b2"
+    },
+    "BOT_TOKEN": {
+      "description": "Your Telegram Bot Token",
+      "value": "8497303111:AAGKfmzGQH1v6DQHeBOecLqRL9mtq0dPtpg"
+    },
+    "SESSION_STRING": {
+      "description": "Your Pyrogram Session String",
+      "value": "BQCOaU4AmT6YuACJAbzEOiO6wFhCLYkIFe4ULqDfvKY_YOBouB1n5CQm6OG6-yYu0QkSv1X2QTt39hzsJSZIgGPTl2vJVYuojvTNeByxFII5VvG0XHBkyHbVMSZLuHf2-IdUwl6pNE9EKFzra5tLJ86a2MJbLYeBdlpU1Ij-GIRFuN7f1COyfaTywncylNnvtHFonDbM7SaVwPpkZeAt6v451u_4l03ozM9M4vTM2aTNFFsNqJfnNUXLVmAE2Ad7K3vy9vwhGqe_o8DCxSG0pRJpZEUIFcksD9-BP1SmlUwdZFlwwjr6NNtuLVMbb8-QfC_g0kCeyjebbYVFD2RYJxH1wnf16wAAAAHrrzhRAA"
+    },
+    "OWNER_ID": {
+      "description": "Your Telegram User ID",
+      "value": "7406389785"
+    },
+    "MONGODB_URI": {
+      "description": "Your MongoDB connection URI",
+      "value": "mongodb+srv://yacan69355:Cw92BrnfAfWQcLvU@cluster0.jh6h6wg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    }
+  },
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "free"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    },
+    {
+      "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest"
+    }
+  ]
+}
