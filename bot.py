@@ -2,9 +2,12 @@ import os
 import asyncio
 from pyrogram import Client, filters, idle
 from pyrogram.types import Message
-import logging
-from pytgcalls import GroupCallFactory  # From py-tgcalls
+from pytgcalls import PyTgCalls
+from pytgcalls.types import Update
+from pytgcalls.types.input_stream import InputAudioStream, InputVideoStream, InputStream
+from pytgcalls.types.input_stream.quality import HighQualityVideo, HighQualityAudio
 from pymongo import MongoClient
+import logging
 
 logging.basicConfig(level=logging.INFO)
 
@@ -44,8 +47,8 @@ user_client = Client(
     api_hash=API_HASH
 )
 
-# Initialize PyTgCalls with GroupCallFactory
-call_py = GroupCallFactory(user_client, GroupCallFactory.MTC_MODE_FILE).get_group_call()
+# Initialize PyTgCalls
+call_py = PyTgCalls(user_client)
 
 # Queue for videos
 video_queue = []
@@ -54,7 +57,8 @@ video_queue = []
 current_chat_id = None
 is_playing = False
 
-async def on_stream_end():
+@call_py.on_stream_end()
+async def on_stream_end(client: PyTgCalls, update: Update):
     global is_playing, video_queue
     if video_queue:
         video_queue.pop(0)
@@ -73,10 +77,21 @@ async def play_next_video():
     chat_id = video_info["chat_id"]
     file_path = video_info["file_path"]
     try:
-        # Use file path directly; py-tgcalls handles audio/video
-        await call_py.join(
+        # Preprocess with FFmpeg to ensure compatibility
+        temp_file = f"temp_{chat_id}.mp4"
+        os.system(f"ffmpeg -y -i {file_path} -c:v libx264 -c:a aac -strict -2 {temp_file}")
+        await call_py.join_group_call(
             chat_id,
-            input_filename=file_path
+            InputStream(
+                InputAudioStream(
+                    temp_file,
+                    HighQualityAudio(),
+                ),
+                InputVideoStream(
+                    temp_file,
+                    HighQualityVideo(),
+                ),
+            ),
         )
         is_playing = True
         current_chat_id = chat_id
@@ -85,6 +100,9 @@ async def play_next_video():
         print(f"Error playing video: {e}")
         video_queue.pop(0)
         await play_next_video()
+    finally:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)  # Clean up
 
 @app.on_message(filters.command("vplay") & filters.group)
 async def vplay_command(client: Client, message: Message):
@@ -115,7 +133,7 @@ async def skip_command(client: Client, message: Message):
     if not is_playing:
         await message.reply_text("No video is currently playing.")
         return
-    await call_py.stop()
+    await call_py.leave_group_call(message.chat.id)
     is_playing = False
     if video_queue:
         skipped_video = video_queue.pop(0)
@@ -131,7 +149,7 @@ async def stop_command(client: Client, message: Message):
     if not is_playing:
         await message.reply_text("No video is currently playing.")
         return
-    await call_py.stop()
+    await call_py.leave_group_call(message.chat.id)
     video_queue = []
     is_playing = False
     await message.reply_text("⏹️ Stopped playback and cleared queue.")
@@ -152,7 +170,7 @@ async def pause_command(client: Client, message: Message):
         await message.reply_text("No video is currently playing.")
         return
     try:
-        await call_py.pause()
+        await call_py.pause_stream(message.chat.id)
         await message.reply_text("⏸️ Playback paused.")
     except Exception as e:
         await message.reply_text(f"Error pausing playback: {e}")
@@ -163,7 +181,7 @@ async def resume_command(client: Client, message: Message):
         await message.reply_text("No video is currently playing.")
         return
     try:
-        await call_py.resume()
+        await call_py.resume_stream(message.chat.id)
         await message.reply_text("▶️ Playback resumed.")
     except Exception as e:
         await message.reply_text(f"Error resuming playback: {e}")
