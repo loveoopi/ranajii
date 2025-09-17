@@ -1,5 +1,5 @@
 pyrogram==2.0.106
-py-tgcalls==2.2.8
+pytgcalls==2.1.0
 pymongo==4.5.0
 tgcrypto==1.2.5
 ffmpeg-python==0.2.0
