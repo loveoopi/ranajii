@@ -2,7 +2,6 @@ import os
 import asyncio
 from pyrogram import Client, filters, idle
 from pyrogram.types import Message
-from pyrogram.errors import PeerIdInvalid
 from pytgcalls import PyTgCalls
 from pytgcalls.types import Update
 from pytgcalls.types.input_stream import InputAudioStream, InputVideoStream, InputStream
@@ -268,7 +267,7 @@ async def list_playlists_command(client: Client, message: Message):
     user_id = message.from_user.id
     
     # Get all playlists for user
-    user_playlists = playlists.find({"user_id": user_id})
+    user_playlists = list(playlists.find({"user_id": user_id}))
     
     if not user_playlists:
         await message.reply_text("You don't have any saved playlists.")
